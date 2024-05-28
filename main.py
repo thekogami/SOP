@@ -38,34 +38,14 @@ class MemoryVisualizationApp(tk.Tk):
         self.grid_columnconfigure(0, weight=1)
 
     def draw_memory_pagination(self, canvas):
-        # Desenhar Memória Virtual
-        def teste():
-            print('Teste de botão 1')
+        button1 = tk.Button(self.frame1, text='Memória Virtual por paginação', command=self.simulate_pagination_algorithm)
+        button1.place(x=160, y=40, width=180, height=30)
 
-        def show_message():
-            messagebox.showinfo("Informação", "Botão 2 pressionado!")
+        button2 = tk.Button(self.frame1, text='Page-in Page-out', command=self.show_message)
+        button2.place(x=350, y=40, width=180, height=30)
 
-        def change_color():
-            canvas.configure(bg='lightblue')
-
-        def reset_color():
-            canvas.configure(bg='white')
-
-        progressbar = ttk.Progressbar(self.frame1, mode="indeterminate")
-        progressbar.place(x=50, y=40, width=100)
-        progressbar.start(10)
-
-        button1 = tk.Button(self.frame1, text='Memória Virtual por paginação', command=teste)
-        button1.place(x=160, y=40, width=80, height=30)
-
-        button2 = tk.Button(self.frame1, text='Page-in Page-out', command=teste)
-        button2.place(x=250, y=40, width=80, height=30)
-
-        button3 = tk.Button(self.frame1, text='Swap-in Swap-out', command=teste)
-        button3.place(x=340, y=40, width=80, height=30)
-
-        button4 = tk.Button(self.frame1, text='Resetar Cor', command=reset_color)
-        button4.place(x=430, y=40, width=80, height=30)
+        button3 = tk.Button(self.frame1, text='Swap-in Swap-out', command=self.show_message)
+        button3.place(x=540, y=40, width=180, height=30)
 
         virtual_mem = [("Página 1", 50, 80), ("Página 2", 50, 120), ("Página 3", 50, 160)]
         for page, x, y in virtual_mem:
@@ -73,12 +53,11 @@ class MemoryVisualizationApp(tk.Tk):
             canvas.create_text(x + 40, y + 15, text=page)
 
         # Desenhar Tabela de Mapeamento
-        mapping_table = [("Página 1", "Moldura 3"), ("Página 2", "Moldura 1"), ("Página 3", "Moldura 2")]
+        self.mapping_table_coords = []
         x, y = 500, 80
         canvas.create_text(x + 50, y - 20, text="Tabela de Mapeamento", font=('Arial', 10, 'bold'))
-        for page, frame in mapping_table:
-            canvas.create_text(x, y, text=page)
-            canvas.create_text(x + 100, y, text=frame)
+        for _ in range(3):
+            self.mapping_table_coords.append((x, y))
             y += 40
 
     def draw_page_in_page_out(self, canvas):
@@ -120,6 +99,42 @@ class MemoryVisualizationApp(tk.Tk):
 
         canvas.create_line(300, 95, 170, 95, arrow=tk.LAST, dash=(4, 2))
         canvas.create_text(235, 115, text="Swap-in", font=('Arial', 10, 'italic'))
+
+    def simulate_pagination_algorithm(self):
+        pages = ["Página 1", "Página 2", "Página 3", "Página 4"]
+        frames = ["Moldura 1", "Moldura 2", "Moldura 3"]
+        page_frame_map = {}
+
+        for i, page in enumerate(pages):
+            if i < len(frames):
+                page_frame_map[page] = frames[i]
+            else:
+                page_out = list(page_frame_map.keys())[0]
+                frame_released = page_frame_map.pop(page_out)
+                page_frame_map[page] = frame_released
+                self.update_mapping_table(page_out, "", release=True)
+                self.update_mapping_table(page, frame_released)
+                self.update_page_in_page_out(page, page_out)
+
+            self.update_mapping_table(page, page_frame_map[page])
+
+    def update_mapping_table(self, page, frame, release=False):
+        if release:
+            for item in self.canvas1.find_withtag("map_table"):
+                if self.canvas1.itemcget(item, 'text').startswith(page):
+                    self.canvas1.delete(item)
+            return
+
+        for x, y in self.mapping_table_coords:
+            if not self.canvas1.find_overlapping(x, y, x + 100, y + 30):
+                self.canvas1.create_text(x, y, text=f"{page} -> {frame}", tags="map_table")
+                break
+
+    def update_page_in_page_out(self, page_in, page_out):
+        self.canvas2.create_text(150, 100, text=f"{page_out} -> {page_in}", font=('Arial', 10, 'italic'))
+
+    def show_message(self):
+        messagebox.showinfo("Informação", "Função ainda não implementada!")
 
 if __name__ == "__main__":
     app = MemoryVisualizationApp()
